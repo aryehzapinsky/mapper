@@ -41,6 +41,8 @@ def create_table():
     )
 
 def data_entry(html):
+    c.execute()
+
     conn.commit()
 
 site =  "http://www.columbia.edu"
@@ -57,14 +59,9 @@ def worker():
 
             # checks to see if course or directory
             pattern = re.compile("[0-9]{4}-[0-9]{5}-[0-9]{3}")
-            print (url_link)
-            print (pattern)
             if pattern.search(url_link):
-                print(1)
                 html.find
-
             else:
-
                 parsing = html.split('"')
                 subjs = [x for x in parsing
                          if any (i in x for i in ["subj-", "subj/"])
@@ -74,8 +71,7 @@ def worker():
                     midfix = "/cu/bulletin/uwb/"
                     if midfix not in suffix:
                         suffix = midfix + suffix
-                        links_to_process.put(site+suffix)
-
+                    links_to_process.put(site+suffix)
 
 
 def main():

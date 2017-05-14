@@ -18,7 +18,7 @@ conn = sqlite3.connect('columbia_map.db', check_same_thread = False)
 c = conn.cursor()
 
 def create_directory_table():
-    c.execute("CREATE TABLE directory"
+    c.execute("CREATE TABLE IF NOT EXISTS directory"
               "(title      TEXT,"
               "epithet     TEXT,"
               "call        TEXT,"
@@ -134,6 +134,7 @@ def data_entry(html):
               (title, epithet, call, day_time, location, points, approvals, instructor, style, description, site, department, enrollment, subject, number, section, division, open_to, campus, note, key)
     )
     conn.commit()
+
 
 site =  "http://www.columbia.edu"
 directory_home = site + "/cu/bulletin/uwb/sel/subj-H.html"

@@ -17,6 +17,9 @@ threads = []
 conn = sqlite3.connect('columbia_map.db', check_same_thread = False)
 c = conn.cursor()
 
+def drop_directory_table():
+    c.execute("DROP TABLE IF EXISTS directory")
+
 def create_directory_table():
     c.execute("CREATE TABLE IF NOT EXISTS directory"
               "(title      TEXT,"
@@ -179,6 +182,7 @@ def worker():
 
 
 def main():
+    drop_directory_table()
     create_directory_table()
 
     for i in range(num_worker_threads):

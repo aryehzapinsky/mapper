@@ -27,7 +27,7 @@ def create_table():
               "(points      TEXT)"
               "(approvals   TEXT)"
               "(instructor  TEXT)"
-              "(type        TEXT)"
+              "(style       TEXT)"
               "(description TEXT)"
               "(site        TEXT)"
               "(department  TEXT)"
@@ -36,8 +36,9 @@ def create_table():
               "(number      TEXT)"
               "(section     TEXT)"
               "(division    TEXT)"
-              "(open        TEXT)"
+              "(open_to     TEXT)"
               "(campus      TEXT)"
+              "(note        TEXT)"
               "(key         TEXT)"
     )
 
@@ -49,21 +50,91 @@ def data_entry(html):
     epithet = epithet.split("<")[0]
     #print(epithet)
 
-    # Quick and dirty way of getting all the information needed from a page
-    cats = [y.split("</td>")[0]
-                    for y in html.split("<td bgcolor=#DADADA>")]
-    # first entry into list is bogus information
-    # there will definitely be edge cases, but this handles most so for starters
-    call = cats[1]
-    day_time = cats[2].split("<br>")[0]
-    #location = cats[2].split("<br>")[1]
-    #points = cats
+    # Separate entries of the HTML table of the directory
+    tag = re.compile('[A-Z]{4}>(.+?)</td>')
+    fields = re.findall(tag, html)
+    try:
+        call = (fields[fields.index("Call Number")+1])
+    except ValueError:
+        call = "N/A: Couldn't find data"
+    try:
+        data = (fields[fields.index("Day &amp; Time<br>Location")+1]).split("<br>")
+        day_time = data[0]
+        location = data[1]
+    except ValueError:
+        day_time = "N/A: Couldn't find data"
+        location = "N/A: Couldn't find data"
+    try:
+        points = (fields[fields.index("Points")+1])
+    except ValueError:
+        points = "N/A: Couldn't find data"
+    try:
+        approvals = (fields[fields.index("Approvals Required")+1])
+    except ValueError:
+        approvals = "N/A: Couldn't find data"
+    try:
+        instructor = (fields[fields.index("Instructor")+1])
+    except ValueError:
+        instructor = "N/A: Couldn't find data"
+    try:
+        style = (fields[fields.index("Type")+1])
+    except ValueError:
+        style = "N/A: Couldn't find data"
+    try:
+        description = (fields[fields.index("Course Description")+1])
+    except ValueError:
+        description = "N/A: Couldn't find data"
+    try:
+        site = (fields[fields.index("Web Site")+1])
+    except ValueError:
+        site = "N/A: Couldn't find data"
+    try:
+        department = (fields[fields.index("Department")+1])
+    except ValueError:
+        department= "N/A: Couldn't find data"
+    try:
+        enrollment = (fields[fields.index("Enrollment")+1])
+    except ValueError:
+        enrollment = "N/A: Couldn't find data"
+    try:
+        subject = (fields[fields.index("Subject")+1])
+    except ValueError:
+        subject = "N/A: Couldn't find data"
+    try:
+        number = (fields[fields.index("Number")+1])
+    except ValueError:
+        number = "N/A: Couldn't find data"
+    try:
+        section = (fields[fields.index("Section")+1])
+    except ValueError:
+        section = "N/A: Couldn't find data"
+    try:
+        division = (fields[fields.index("Division")+1])
+    except ValueError:
+        division = "N/A: Couldn't find data"
+    try:
+        open_to = (fields[fields.index("Open To")+1])
+    except ValueError:
+        open_to = "N/A: Couldn't find data"
+    try:
+        campus = (fields[fields.index("Campus")+1])
+    except ValueError:
+        campus = "N/A: Couldn't find data"
+    try:
+        note = (fields[fields.index("Note")+1])
+    except ValueError:
+        note = "N/A: Couldn't find data"
+    try:
+        key = (fields[fields.index("Section key")+1])
+    except ValueError:
+        key = "N/A: Couldn't find data"
 
-    print (categorizers)
-
-    #c.execute()
-
-    #conn.commit()
+    c.execute("INSERT INTO directory"
+              "(title, epithet, call, day_time, location, points, approvals, instructor, style, description, site, department, enrollment, subject, number, section, division, open_to, campus, note, key)"
+              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              (title, epithet, call, day_time, location, points, approvals, instructor, style, description, site, department, enrollment, subject, number, section, division, open_to, campus, note, key)
+    )
+    conn.commit()
 
 site =  "http://www.columbia.edu"
 directory_home = site + "/cu/bulletin/uwb/sel/subj-H.html"
@@ -111,13 +182,13 @@ def main():
         t.start()
         threads.append(t)
 
-        # stop workers
-        for t in threads:
-            t.join()
+    # stop workers
+    for t in threads:
+        t.join()
 
-        # close database
-        #c.close()
-        #conn.close()
+    # close database
+    c.close()
+    conn.close()
 
 if __name__ == '__main__':
     main()

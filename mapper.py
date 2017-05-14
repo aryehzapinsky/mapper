@@ -5,6 +5,7 @@ __author__ = "Aryeh Zapinsky"
 
 import threading, queue
 import urllib.request as ur
+from urllib.error import URLError
 import re
 import sqlite3
 
@@ -41,12 +42,33 @@ def create_table():
     )
 
 def data_entry(html):
-    c.execute()
+    title = html[html.find("+1>") + len("+1>"):]
+    title = title.split("<")[0]
+    #print(title)
+    epithet = html[html.find("+2>") + len("+2>"):]
+    epithet = epithet.split("<")[0]
+    #print(epithet)
 
-    conn.commit()
+    # Quick and dirty way of getting all the information needed from a page
+    cats = [y.split("</td>")[0]
+                    for y in html.split("<td bgcolor=#DADADA>")]
+    # first entry into list is bogus information
+    # there will definitely be edge cases, but this handles most so for starters
+    call = cats[1]
+    day_time = cats[2].split("<br>")[0]
+    #location = cats[2].split("<br>")[1]
+    #points = cats
+
+    print (categorizers)
+
+    #c.execute()
+
+    #conn.commit()
 
 site =  "http://www.columbia.edu"
-directory_home = site + "/cu/bulletin/uwb/sel/subj-H.html"#"/cu/bulletin/uwb/home.html"
+directory_home = site + "/cu/bulletin/uwb/sel/subj-H.html"
+# just H subdirectory "/cu/bulletin/uwb/sel/subj-H.html"
+# whole directory "/cu/bulletin/uwb/home.html"
 
 links_to_process.put(directory_home)
 
@@ -54,13 +76,22 @@ def worker():
     while not links_to_process.empty():
         url_link = links_to_process.get()
         #print (url_link)
-        with ur.urlopen(url_link) as response:
+        try:
+            response = ur.urlopen(url_link)
+        except URLError as e:
+            if hasattr(e, 'reason'):
+                print('We failed to reach a server.')
+                print('Reason: ', e.reason)
+            elif hasattr(e, 'code'):
+                print('The server couldn\'t fulfill the request.')
+                print('Error code: ', e.code)
+        else:
             html = str(response.read())
 
             # checks to see if course or directory
             pattern = re.compile("[0-9]{4}-[0-9]{5}-[0-9]{3}")
             if pattern.search(url_link):
-                html.find
+                data_entry(html)
             else:
                 parsing = html.split('"')
                 subjs = [x for x in parsing

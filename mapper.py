@@ -14,34 +14,33 @@ links_to_process = queue.Queue()
 num_worker_threads = 8
 threads = []
 
-conn = sqlite3.connect('columbia_map.db')
+conn = sqlite3.connect('columbia_map.db', check_same_thread = False)
 c = conn.cursor()
 
-def create_table():
+def create_directory_table():
     c.execute("CREATE TABLE directory"
-              "(title       TEXT)"
-              "(epithet     TEXT)"
-              "(call        TEXT)"
-              "(day_time    TEXT)"
-              "(location    TEXT)"
-              "(points      TEXT)"
-              "(approvals   TEXT)"
-              "(instructor  TEXT)"
-              "(style       TEXT)"
-              "(description TEXT)"
-              "(site        TEXT)"
-              "(department  TEXT)"
-              "(enrollment  TEXT)"
-              "(subject     TEXT)"
-              "(number      TEXT)"
-              "(section     TEXT)"
-              "(division    TEXT)"
-              "(open_to     TEXT)"
-              "(campus      TEXT)"
-              "(note        TEXT)"
-              "(key         TEXT)"
+              "(title      TEXT,"
+              "epithet     TEXT,"
+              "call        TEXT,"
+              "day_time    TEXT,"
+              "location    TEXT,"
+              "points      TEXT,"
+              "approvals   TEXT,"
+              "instructor  TEXT,"
+              "style       TEXT,"
+              "description TEXT,"
+              "site        TEXT,"
+              "department  TEXT,"
+              "enrollment  TEXT,"
+              "subject     TEXT,"
+              "number      TEXT,"
+              "section     TEXT,"
+              "division    TEXT,"
+              "open_to     TEXT,"
+              "campus      TEXT,"
+              "note        TEXT,"
+              "key         TEXT)"
     )
-
 def data_entry(html):
     title = html[html.find("+1>") + len("+1>"):]
     title = title.split("<")[0]
@@ -161,8 +160,10 @@ def worker():
 
             # checks to see if course or directory
             pattern = re.compile("[0-9]{4}-[0-9]{5}-[0-9]{3}")
+            # PROCESS COURSE
             if pattern.search(url_link):
                 data_entry(html)
+            # Add course or link to be followed
             else:
                 parsing = html.split('"')
                 subjs = [x for x in parsing
@@ -177,6 +178,8 @@ def worker():
 
 
 def main():
+    create_directory_table()
+
     for i in range(num_worker_threads):
         t = threading.Thread(target=worker)
         t.start()

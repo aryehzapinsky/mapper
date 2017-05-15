@@ -8,6 +8,8 @@ import urllib.request as ur
 from urllib.error import URLError
 import re
 import sqlite3
+import sys
+from PyQt5 import QtGui
 
  #queue_lock = threading.Lock()
 links_to_process = queue.Queue()
@@ -17,9 +19,15 @@ threads = []
 conn = sqlite3.connect('columbia_map.db', check_same_thread = False)
 c = conn.cursor()
 
+'''
+drop_directory_table function that drops table
+'''
 def drop_directory_table():
     c.execute("DROP TABLE IF EXISTS directory")
 
+'''
+create_directory_table function that creates table
+'''
 def create_directory_table():
     c.execute("CREATE TABLE IF NOT EXISTS directory"
               "(title      TEXT,"
@@ -44,6 +52,11 @@ def create_directory_table():
               "note        TEXT,"
               "key         TEXT)"
     )
+
+'''
+data_entry function that processes the course and enters into database
+html = html from urlopen
+'''
 def data_entry(html):
     title = html[html.find("+1>") + len("+1>"):]
     title = title.split("<")[0]
@@ -146,6 +159,9 @@ directory_home = site + "/cu/bulletin/uwb/sel/subj-H.html"
 
 links_to_process.put(directory_home)
 
+'''
+worker function that handles the courses
+'''
 def worker():
     while not links_to_process.empty():
         url_link = links_to_process.get()
@@ -180,8 +196,26 @@ def worker():
                         suffix = midfix + suffix
                     links_to_process.put(site+suffix)
 
+'''
+test fucntion to check that database has all the courses.
+Prints out the entries of the directory table
+'''
+def test():
+    c.execute('SELECT * FROM directory')
+    data = c.fetchall()
+    print(data)
+    for row in data:
+        print(row)
+
+class Window(QtGui.QMainWindow):
+
+    def __init__(self):
+        super(Window, self).__init__()
+        self.setWindowTitle("Grapher - a way to graph Columbia courses")
+        self.show()
 
 def main():
+    '''
     drop_directory_table()
     create_directory_table()
 
@@ -194,6 +228,12 @@ def main():
     for t in threads:
         t.join()
 
+    test()
+    '''
+
+    app = QtGui.QApplication(sys.argv)
+    GUI = Window()
+    sys.exit(app.exec_())
     # close database
     c.close()
     conn.close()

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """ This program maps Columbia's Directory of Courses """
 
 __author__ = "Aryeh Zapinsky"
@@ -9,27 +9,22 @@ from urllib.error import URLError
 import re
 import sqlite3
 import sys
-from PyQt5 import QtGui
-
- #queue_lock = threading.Lock()
-links_to_process = queue.Queue()
-num_worker_threads = 8
-threads = []
-
-conn = sqlite3.connect('columbia_map.db', check_same_thread = False)
-c = conn.cursor()
+import os.path
 
 '''
 drop_directory_table function that drops table
 '''
-def drop_directory_table():
-    c.execute("DROP TABLE IF EXISTS directory")
+def drop_directory_table(connection):
+    curse = connection.cursor()
+    curse.execute("DROP TABLE IF EXISTS directory")
+    curse.close()
 
 '''
 create_directory_table function that creates table
 '''
-def create_directory_table():
-    c.execute("CREATE TABLE IF NOT EXISTS directory"
+def create_directory_table(connection):
+    curse = connection.cursor()
+    curse.execute("CREATE TABLE IF NOT EXISTS directory"
               "(title      TEXT,"
               "epithet     TEXT,"
               "call        TEXT,"
@@ -52,12 +47,13 @@ def create_directory_table():
               "note        TEXT,"
               "key         TEXT)"
     )
+    curse.close()
 
 '''
 data_entry function that processes the course and enters into database
 html = html from urlopen
 '''
-def data_entry(html):
+def data_entry(connection, html):
     title = html[html.find("+1>") + len("+1>"):]
     title = title.split("<")[0]
     #print(title)
@@ -144,25 +140,20 @@ def data_entry(html):
     except ValueError:
         key = "N/A: Couldn't find data"
 
-    c.execute("INSERT INTO directory"
+    curse = connection.cursor()
+    curse.execute("INSERT INTO directory"
               "(title, epithet, call, day_time, location, points, approvals, instructor, style, description, site, department, enrollment, subject, number, section, division, open_to, campus, note, key)"
               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
               (title, epithet, call, day_time, location, points, approvals, instructor, style, description, site, department, enrollment, subject, number, section, division, open_to, campus, note, key)
     )
-    conn.commit()
+    connection.commit()
+    curse.close()
 
-
-site =  "http://www.columbia.edu"
-directory_home = site + "/cu/bulletin/uwb/sel/subj-H.html"
-# just H subdirectory "/cu/bulletin/uwb/sel/subj-H.html"
-# whole directory "/cu/bulletin/uwb/home.html"
-
-links_to_process.put(directory_home)
 
 '''
 worker function that handles the courses
 '''
-def worker():
+def worker(links_to_process, conn, site):
     while not links_to_process.empty():
         url_link = links_to_process.get()
         #print (url_link)
@@ -182,7 +173,7 @@ def worker():
             pattern = re.compile("[0-9]{4}-[0-9]{5}-[0-9]{3}")
             # PROCESS COURSE
             if pattern.search(url_link):
-                data_entry(html)
+                data_entry(conn, html)
             # Add course or link to be followed
             else:
                 parsing = html.split('"')
@@ -200,43 +191,56 @@ def worker():
 test fucntion to check that database has all the courses.
 Prints out the entries of the directory table
 '''
-def test():
-    c.execute('SELECT * FROM directory')
-    data = c.fetchall()
-    print(data)
+def test(connection):
+    print("||About to execute SQLite command||")
+    curse = connection.cursor()
+    curse.execute('SELECT title FROM directory')
+    data = curse.fetchall()
+    """
     for row in data:
-        print(row)
+        print(*row)
+    """
+    curse.close()
+    return data
 
-class Window(QtGui.QMainWindow):
+def start():
 
-    def __init__(self):
-        super(Window, self).__init__()
-        self.setWindowTitle("Grapher - a way to graph Columbia courses")
-        self.show()
+    num_worker_threads = 8
+    threads = []
 
-def main():
-    '''
-    drop_directory_table()
-    create_directory_table()
+    conn = sqlite3.connect('columbia_map.db', check_same_thread = False)
 
-    for i in range(num_worker_threads):
-        t = threading.Thread(target=worker)
-        t.start()
-        threads.append(t)
+    site =  "http://www.columbia.edu"
+    directory_home = site + "/cu/bulletin/uwb/sel/subj-H.html"
+    # just H subdirectory "/cu/bulletin/uwb/sel/subj-H.html"
+    # whole directory "/cu/bulletin/uwb/home.html"
 
-    # stop workers
-    for t in threads:
-        t.join()
+    links_to_process = queue.Queue()
+    links_to_process.put(directory_home)
 
-    test()
-    '''
+    #drop_directory_table(conn)
+    #print("Creating the table if it does not already exist.")
+    create_directory_table(conn)
 
-    app = QtGui.QApplication(sys.argv)
-    GUI = Window()
-    sys.exit(app.exec_())
+    if not os.path.isfile("columbia_map.db"):
+
+        print("Walking through the interwebs")
+        for i in range(num_worker_threads):
+            t = threading.Thread(target=worker, args=(links_to_process, conn, site))
+            t.start()
+            threads.append(t)
+
+            # stop workers
+            for t in threads:
+                t.join()
+
+    data = test(conn)
     # close database
-    c.close()
     conn.close()
+    return data
 
 if __name__ == '__main__':
-    main()
+    print(start())
+    ends = [x[0] for x in start()]
+    for end in ends:
+        print(end)

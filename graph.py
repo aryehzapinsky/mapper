@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Attempt at implementation of graphing class with PyQt5
@@ -30,8 +30,8 @@ class Node(QGraphicsItem):
     #TODO: this needs to be fixed
     def boundingRect(self):
         adjust = 2.0
-        return QRectF(-10 - adjust, -10 -adjust,
-                     20 + adjust, 20 + adjust)
+        return QRectF(-20 - adjust, -20 -adjust,
+                     40 + adjust, 40 + adjust)
     '''
     #Not sure this is necessay, if no collisions
     def shape(self):
@@ -66,7 +66,7 @@ class Node(QGraphicsItem):
 
 
 class GraphWidget(QGraphicsView):
-    def __init__(self):
+    def __init__(self, listings):
         super(GraphWidget, self).__init__()
 
         dim = 500
@@ -79,12 +79,20 @@ class GraphWidget(QGraphicsView):
 
         scene.setSceneRect(QRectF())
 
-        for i in range(20):
-            item = Node(self, "Hello World\n\nThis will blow your mind")
+        xpos = 0
+        ypos = 0
+        squareDim = math.ceil(math.sqrt(len(listings)))
+
+        for listing in listings:
+            item = Node(self, *listing)
             scene.addItem(item)
+            item.setPos(xpos, ypos)
+            item.setPos(xpos * (dim/10), ypos * (dim/10))
 
-            item.setPos(i * (dim/10), 0)
-
+            xpos += 1
+            if xpos == squareDim:
+                xpos %= squareDim
+                ypos += 1
 
         self.scale(0.8, 0.8)
         self.setMinimumSize(400, 400)
@@ -118,10 +126,12 @@ class GraphWidget(QGraphicsView):
 if __name__ == '__main__':
 
     import sys
+    import mapper
 
     app = QApplication(sys.argv)
 
-    widget = GraphWidget()
+    data = mapper.start()
+    widget = GraphWidget(data)
     widget.show()
 
     sys.exit(app.exec_())

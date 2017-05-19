@@ -1,4 +1,4 @@
-#1!/usr/bin/env python
+#!/usr/bin/env python
 
 """
 Attempt at implementation of graphing class with PyQt5
@@ -31,15 +31,15 @@ class Node(QGraphicsItem):
     def boundingRect(self):
         adjust = 2.0
         return QRectF(-10 - adjust, -10 -adjust,
-                     55 + adjust, 55 + adjust)
-
+                     20 + adjust, 20 + adjust)
+    '''
     #Not sure this is necessay, if no collisions
     def shape(self):
         rect = QRectF(self.boundingRect())
         path = QPainterPath()
         path.addEllipse(rect)
         return path
-
+    '''
     def paint(self, painter, option, widget):
         rect = QRectF(self.boundingRect())
         painter.setPen(Qt.NoPen)
@@ -69,18 +69,22 @@ class GraphWidget(QGraphicsView):
     def __init__(self):
         super(GraphWidget, self).__init__()
 
+        dim = 500
         scene = QGraphicsScene(self)
-        scene.setSceneRect(-200, -200, 400, 400)
+        self.setGeometry(QRect(dim/2, dim/2, dim, dim))
         self.setScene(scene)
         self.setRenderHint(QPainter.Antialiasing)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
 
+        scene.setSceneRect(QRectF())
 
+        for i in range(20):
+            item = Node(self, "Hello World\n\nThis will blow your mind")
+            scene.addItem(item)
 
-        node1 = Node(self, "Hello World\n\nThis will blow your mind")
+            item.setPos(i * (dim/10), 0)
 
-        scene.addItem(node1)
 
         self.scale(0.8, 0.8)
         self.setMinimumSize(400, 400)
